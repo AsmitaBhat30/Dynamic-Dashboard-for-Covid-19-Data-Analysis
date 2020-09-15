@@ -161,7 +161,7 @@ if __name__ == '__main__':
     result = get_doubling_time_via_regression(test_data_reg)
     print('the test slope is: ' + str(result))
 
-    pd_JH_data = pd.read_csv('data/processed/COVID_relational_confirmed.csv', sep=';', parse_dates=[0])
+    pd_JH_data = pd.read_csv('../../data/processed/COVID_relational_confirmed.csv', sep=';', parse_dates=[0])
     pd_JH_data = pd_JH_data.sort_values('Date', ascending=True).copy()
 
     # test_structure=pd_JH_data[((pd_JH_data['Country']=='US')|
@@ -173,5 +173,5 @@ if __name__ == '__main__':
 
     mask = pd_result_larg['Confirmed'] > 100
     pd_result_larg['Confirmed_filtered_DR'] = pd_result_larg['Confirmed_filtered_DR'].where(mask, other=np.NaN)
-    pd_result_larg.to_csv('data/processed/COVID_final_set.csv', sep=';', index=False)
+    pd_result_larg.to_csv('../../data/processed/COVID_final_set.csv', sep=';', index=False)
     print(pd_result_larg[pd_result_larg['Country'] == 'Germany'].tail())
