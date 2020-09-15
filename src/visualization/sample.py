@@ -24,11 +24,11 @@ from scipy import integrate
 from datetime import datetime
 
 # Pull data from Github for latest update
-# get_johns_hopkins()
+get_johns_hopkins()
 
 # The following functions runs the preprocessing pipelines
-# store_relational_JH_data()
-# features_generator()
+store_relational_JH_data()
+features_generator()
 
 import os
 
@@ -43,14 +43,14 @@ df_population = pd.read_csv('../../data/processed/population.csv', sep=';')
 
 
 # Helper function for SIR modelling
-def SIR_model(y_data, population, suscept):
+def SIR_model(y_data, population):
     global SIR, t, N0
 
     ydata = np.array(y_data)
     t = np.arange(len(ydata))
 
-    # Assuming 30 percent population are suscetible for infection
-    N0 = suscept * population
+    # Assuming 10 percent population are suscetible for infection
+    N0 = 0.1 * population
     I0 = ydata[0]
     S0 = N0 - I0
     R0 = 0
@@ -64,7 +64,7 @@ def SIR_model(y_data, population, suscept):
     popt, pcov = optimize.curve_fit(fit_odeint, t, ydata, bounds=(0, [0.5, 0.2]))
     perr = np.sqrt(np.diag(pcov))
 
-    print('standard deviation errors : ',str(perr), ' start infect:',ydata[0])
+    print('standard deviation errors : ', str(perr), ' start infect:', ydata[0])
     print("Optimal parameters: beta =", popt[0], " and gamma = ", popt[1])
 
     fitted = fit_odeint(t, *popt)
@@ -111,7 +111,7 @@ app.layout = html.Div([
 
     '''),
 
-    dcc.Tabs(id='main_tab', value='tab1', children=[
+    dcc.Tabs(id='main_tab', value='main_tab', children=[
         dcc.Tab(id='tab1', label='Country-Wise cases visualization', value='tab1', children=[
 
             dcc.Markdown('''
@@ -120,7 +120,7 @@ app.layout = html.Div([
 
             dcc.Dropdown(
                 id='country_drop_down',
-                options=[{'label': each, 'value': each} for each in df_input_large['Country'].unique()],
+                options=[{'label': each, 'value': each} for each in df_input_large['country'].unique()],
                 value=['Germany', 'India'],  # which are pre-selected
                 multi=True
             ),
@@ -132,12 +132,12 @@ app.layout = html.Div([
             dcc.Dropdown(
                 id='doubling_time',
                 options=[
-                    {'label': 'Timeline Confirmed ', 'value': 'Confirmed'},
-                    {'label': 'Timeline Confirmed Filtered', 'value': 'Confirmed_filtered'},
-                    {'label': 'Timeline Doubling Rate', 'value': 'Confirmed_DR'},
-                    {'label': 'Timeline Doubling Rate Filtered', 'value': 'Confirmed_filtered_DR'},
+                    {'label': 'Timeline Confirmed ', 'value': 'confirmed'},
+                    {'label': 'Timeline Confirmed Filtered', 'value': 'confirmed_filtered'},
+                    {'label': 'Timeline Doubling Rate', 'value': 'confirmed_DR'},
+                    {'label': 'Timeline Doubling Rate Filtered', 'value': 'confirmed_filtered_DR'},
                 ],
-                value='Confirmed',
+                value='confirmed',
                 multi=False
             ),
 
@@ -146,34 +146,15 @@ app.layout = html.Div([
         dcc.Tab(id='tab2', label='SIR Modelling of Infection spread', value='tab2', children=[
             dcc.Markdown('''
 
-    # SIR model fitting of COVID-19 spread
+    # SIR model fitiing of COVID-19 spread
 
     '''),
 
             dcc.Dropdown(
                 id='country_selection',
-                options=[{'label': each, 'value': each} for each in pd.Series(
-                    list(set(df_analyse['Country']).intersection(set(df_population['COUNTRY'])))).sort_values()],
+                options=[{'label': each, 'value': each} for each in df_analyse['country'].unique()],
                 value='Germany',  # which are pre-selected
                 multi=False),
-
-            html.Div([html.Label('Percentage of Susceptible population'),
-                      dcc.Slider(
-                          id='my-slider',
-                          min=0.05,
-                          max=1,
-                          step=0.05,
-                          value=0.1,
-                          marks={
-                              0.05: '0.05',
-                              0.2: '0.2',
-                              0.4: '0.4',
-                              0.6: '0.6',
-                              0.8: '0.8',
-                              1: '1'
-                          },
-                      )], style={'height': '50px', 'width': '20%', 'display': 'inline-block', 'padding': '20px'}, ),
-
 
             dcc.Graph(figure=fig, id='SIR_figure')
         ])
@@ -201,18 +182,18 @@ def update_figure(country_list, show_doubling):
     traces = []
     for each in country_list:
 
-        df_plot = df_input_large[df_input_large['Country'] == each]
+        df_plot = df_input_large[df_input_large['country'] == each]
 
         if show_doubling == 'doubling_rate_filtered':
             df_plot = df_plot[
-                ['State', 'Country', 'Confirmed', 'Confirmed_filtered', 'Confirmed_DR', 'Confirmed_filtered_DR',
-                 'Date']].groupby(['Country', 'Date']).agg(np.mean).reset_index()
+                ['state', 'country', 'confirmed', 'confirmed_filtered', 'confirmed_DR', 'confirmed_filtered_DR',
+                 'date']].groupby(['country', 'date']).agg(np.mean).reset_index()
         else:
             df_plot = df_plot[
-                ['State', 'Country', 'Confirmed', 'Confirmed_filtered', 'Confirmed_DR', 'Confirmed_filtered_DR',
-                 'Date']].groupby(['Country', 'Date']).agg(np.sum).reset_index()
+                ['state', 'country', 'confirmed', 'confirmed_filtered', 'confirmed_DR', 'confirmed_filtered_DR',
+                 'date']].groupby(['country', 'date']).agg(np.sum).reset_index()
 
-        traces.append(dict(x=df_plot.Date,
+        traces.append(dict(x=df_plot.date,
                            y=df_plot[show_doubling],
                            mode='markers+lines',
                            opacity=0.9,
@@ -239,44 +220,40 @@ def update_figure(country_list, show_doubling):
 
 @app.callback(
     Output('SIR_figure', 'figure'),
-    [Input('country_selection', 'value'),
-     Input('my-slider', 'value')],
-)
-def update_SIR_figure(country_selection, suscept):
+    [Input('country_selection', 'value')])
+def update_SIR_figure(country_selection):
     traces = []
 
-    if country_selection:
-        df_plot = df_analyse[df_analyse['Country'] == country_selection]
-        df_plot = df_plot[['State', 'Country', 'Confirmed', 'Date']].groupby(['Country', 'Date']).agg(
-            np.sum).reset_index()
-        df_plot.sort_values('Date', ascending=True).head()
-        # we start from a later date since most of the countries cases started long after the initial 35 days
-        df_plot = df_plot.Confirmed[60:]
+    df_plot = df_analyse[df_analyse['country'] == country_selection]
+    df_plot = df_plot[['state', 'country', 'confirmed', 'date']].groupby(['country', 'date']).agg(np.sum).reset_index()
+    df_plot.sort_values('date', ascending=True).head()
+    # we start from a later date since most of the countries cases started long after the initial 35 days
+    df_plot = df_plot.confirmed[60:]
 
-        population = df_population[df_population['COUNTRY'] == country_selection]['Value'].values[0]
+    population = df_population[df_population['COUNTRY'] == country_selection]['Value'].values[0]
 
-        t, fitted = SIR_model(df_plot, population, suscept)
+    t, fitted = SIR_model(df_plot, population)
 
-        traces.append(dict(x=t,
-                           y=fitted,
-                           mode='markers',
-                           opacity=0.9,
-                           name='SIR-fit')
-                      )
+    traces.append(dict(x=t,
+                       y=fitted,
+                       mode='markers',
+                       opacity=0.9,
+                       name='SIR-fit')
+                  )
 
-        traces.append(dict(x=t,
-                           y=df_plot,
-                           mode='lines',
-                           opacity=0.9,
-                           name='Original Data')
-                      )
+    traces.append(dict(x=t,
+                       y=df_plot,
+                       mode='lines',
+                       opacity=0.9,
+                       name='Original Data')
+                  )
 
     return {
         'data': traces,
         'layout': dict(
-            width=1080,
-            height=520,
-            title='SIR model fitting',
+            width=1280,
+            height=720,
+            title='SIR model fitting for ' + country_selection,
 
             xaxis={'title': 'Days',
                    'tickangle': -45,
