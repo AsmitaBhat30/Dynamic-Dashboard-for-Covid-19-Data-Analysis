@@ -1,7 +1,7 @@
 Covid-19 Data Analysis
 ==============================
 
-We would like to explore the spread of coronavirus across different countries.
+In this project I tried to explore the spread of coronavirus across different countries.
 
 Project Organization
 ------------
