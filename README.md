@@ -3,6 +3,9 @@ Covid-19 Data Analysis
 
 In this project I tried to explore the spread of coronavirus across different countries.
 
+For this project, CRISP model for data science has been followed. Following disgram shows the brief description for each step in the CRISP model.
+![alt text](https://github.com/AsmitaBhat30/Dynamic-Dashboard-for-Covid-19-Data-Analysis/blob/master/reports/figures/CRISP_DM.png)
+
 Project Organization
 ------------
 
