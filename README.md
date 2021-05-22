@@ -6,6 +6,12 @@ In this project I tried to explore the spread of coronavirus across different co
 For this project, CRISP model for data science has been followed. Following disgram shows the brief description for each step in the CRISP model.
 ![alt text](https://github.com/AsmitaBhat30/Dynamic-Dashboard-for-Covid-19-Data-Analysis/blob/master/reports/figures/CRISP_DM.png)
 
+
+Data Collection : 
+------------------
+Data has been collected from John Hopkin's gitHub Repo. Following is the link for the same:
+https://github.com/CSSEGISandData/COVID-19
+
 Project Organization
 ------------
 
